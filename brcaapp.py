@@ -14,7 +14,7 @@ Enter tumor characteristics below and click **Predict**.
 try:
     with open('breast_cancer_model.pkl', 'rb') as f:
         model = pickle.load(f)
-    with open('scaler.pkl', 'rb') as f:
+    with open('breast_cancer_model.pkl', 'rb') as f:
         scaler = pickle.load(f)
 except Exception as e:
     st.error(f"Error loading model: {str(e)}")

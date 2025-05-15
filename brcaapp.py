@@ -23,6 +23,49 @@ Please adjust the sliders below to input patient data and get a prediction.
 
 st.warning("⚠️ **Medical Disclaimer**: This tool is for educational and research purposes only. It should not replace professional medical advice, diagnosis, or treatment.")
 
+# Function to train and save model and scaler
+def train_and_save_model():
+    try:
+        from sklearn.datasets import load_breast_cancer
+        from sklearn.model_selection import train_test_split
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.preprocessing import StandardScaler
+        
+        # Load the breast cancer dataset
+        data = load_breast_cancer()
+        X = pd.DataFrame(data.data, columns=data.feature_names)
+        y = data.target
+        
+        # Select only the mean features that we're using in the app
+        mean_features = [col for col in X.columns if 'mean' in col]
+        X = X[mean_features]
+        
+        # Convert feature names to format used in the app
+        X.columns = [col.replace(' ', '_').lower() for col in X.columns]
+        
+        # Split the data
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Scale the features
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        
+        # Train the model
+        model = RandomForestClassifier(n_estimators=100, random_state=42)
+        model.fit(X_train_scaled, y_train)
+        
+        # Save the model and scaler
+        with open('breast_cancer_model.pkl', 'wb') as f:
+            pickle.dump(model, f)
+            
+        with open('scaler.pkl', 'wb') as f:
+            pickle.dump(scaler, f)
+            
+        return model, scaler
+    except Exception as e:
+        st.error(f"Error creating model: {str(e)}")
+        return None, None
+
 # Function to load the model and scaler
 @st.cache_resource
 def load_model_and_scaler():
@@ -33,8 +76,8 @@ def load_model_and_scaler():
             scaler = pickle.load(f)
         return model, scaler
     except FileNotFoundError:
-        st.error("Model files not found. Please ensure 'breast_cancer_model.pkl' and 'scaler.pkl' are available.")
-        return None, None
+        st.warning("Model files not found. Training a new model... (this may take a moment)")
+        return train_and_save_model()
 
 # Load model and scaler
 model, scaler = load_model_and_scaler()
